@@ -18,6 +18,8 @@ const KNOWN_GOOD: [string, () => Uint8Array, string][] = [
   ['red (rgb)', () => rgbCmd(0xff, 0, 0), '55 03 FF 09 FF 00 00 00 A0'],
   ['blue (rgb)', () => rgbCmd(0, 0, 0xff), '55 03 FF 09 00 00 FF 00 A0'],
   ['brightness raw 525', () => brightnessRawCmd(525), '55 05 FF 07 02 0D 90'],
+  // The lamp's peak, found by hand: matches the physical remote's brightest setting.
+  ['brightness max 25000', () => brightnessRawCmd(25000), '55 05 FF 07 61 A8 96'],
   ['sync request', () => syncCmd(), '55 00 FF 05 A6'],
 ];
 
@@ -52,22 +54,29 @@ describe('frame', () => {
 });
 
 describe('brightness', () => {
-  it('maps 0-100% onto 50-1000 in steps of 10', () => {
+  it('reaches the lamp’s peak (25000) at 100%, not the strip app’s 1000', () => {
+    expect(toHex(brightnessCmd(100))).toBe('55 05 FF 07 61 A8 96');
+  });
+
+  it('maps 0-100% onto 50-25000 along a squared curve', () => {
     expect(brightnessPercentToRaw(0)).toBe(50);
-    expect(brightnessPercentToRaw(100)).toBe(1000);
-    expect(brightnessPercentToRaw(50)).toBe(530);
-    expect(brightnessPercentToRaw(1)).toBe(60);
+    expect(brightnessPercentToRaw(100)).toBe(25000);
+    expect(brightnessPercentToRaw(50)).toBe(6288);
+    // The old 50-1000 range now spans the bottom fifth of the slider.
+    expect(brightnessPercentToRaw(20)).toBe(1048);
+  });
+
+  it('increases with every slider step', () => {
+    for (let pct = 1; pct <= 100; pct++) {
+      expect(brightnessPercentToRaw(pct)).toBeGreaterThan(brightnessPercentToRaw(pct - 1));
+    }
   });
 
   it('clamps out-of-range input', () => {
     expect(brightnessPercentToRaw(-20)).toBe(50);
-    expect(brightnessPercentToRaw(250)).toBe(1000);
-    expect(toHex(brightnessRawCmd(5000))).toBe(toHex(brightnessRawCmd(1000)));
+    expect(brightnessPercentToRaw(250)).toBe(25000);
+    expect(toHex(brightnessRawCmd(40000))).toBe(toHex(brightnessRawCmd(25000)));
     expect(toHex(brightnessRawCmd(0))).toBe(toHex(brightnessRawCmd(50)));
-  });
-
-  it('builds a 2-byte big-endian frame', () => {
-    expect(toHex(brightnessCmd(100))).toMatch(/^55 05 FF 07 03 E8 /);
   });
 });
 

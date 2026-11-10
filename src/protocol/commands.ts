@@ -8,22 +8,31 @@ import { clamp, hsvToRgb } from './color';
  */
 export type ColorEncoding = 'rgb' | 'hsv';
 
+/**
+ * Brightness range for 0x05. The MeRGBW strip app tops out at 1000, but the
+ * Sunset Lamp keeps getting brighter up to 25000 (0x61A8), which matches the
+ * physical remote's peak (found by hand on the lamp, Nov 2026).
+ */
 export const BRIGHTNESS_MIN = 50;
-export const BRIGHTNESS_MAX = 1000;
+export const BRIGHTNESS_MAX = 25000;
 
 export const syncCmd = (): Uint8Array => frame(CMD.SYNC);
 
 export const powerCmd = (on: boolean): Uint8Array => frame(CMD.POWER, [on ? 1 : 0]);
 
-/** Raw brightness value, 50-1000, sent as 2 bytes big-endian. */
+/** Raw brightness value, 50-25000, sent as 2 bytes big-endian. */
 export function brightnessRawCmd(value: number): Uint8Array {
   return frame(CMD.BRIGHTNESS, be16(Math.round(clamp(value, BRIGHTNESS_MIN, BRIGHTNESS_MAX))));
 }
 
-/** The app's 0-100% slider mapped onto the lamp's (i + 5) * 10 scale, i = 0..95. */
+/**
+ * The app's 0-100% slider mapped onto the lamp's raw range along a squared
+ * curve. Perceived LED brightness rises steeply at low values, so a straight
+ * line would cram everything from dim to bright into the first few percent.
+ */
 export function brightnessPercentToRaw(pct: number): number {
-  const i = Math.round((clamp(pct, 0, 100) / 100) * 95);
-  return (i + 5) * 10;
+  const t = clamp(pct, 0, 100) / 100;
+  return Math.round(BRIGHTNESS_MIN + (BRIGHTNESS_MAX - BRIGHTNESS_MIN) * t * t);
 }
 
 export const brightnessCmd = (pct: number): Uint8Array =>

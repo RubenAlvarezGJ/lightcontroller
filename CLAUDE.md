@@ -46,7 +46,7 @@ tests/          fakes.ts (FakeLamp/FakeTransport) drives LampManager and UI test
 
 - Frame: `55 <cmd> FF <len=5+payload> <payload…> <checksum>`, checksum `~(sum & 0xFF) & 0xFF`. **The lamp silently drops bad frames.** Any frame change needs the known-good frames in `tests/frame.test.ts` to still pass.
 - **Color `0x03` is RGB on this lamp (`[R, G, B, 0x00]`), not HSV.** Sending HSV shows every color as green. `hsv` encoding is only for MeRGBW strips.
-- Brightness `0x05` is BE16 50 to 1000; the app maps a percentage via `(round(pct/100*95) + 5) * 10`. The handover's 525 test frame is a raw value, not reachable from a percentage.
+- Brightness `0x05` is BE16 **50 to 25000** on this lamp (found by hand; 25000 matches the remote's peak). The reference project's 1000 cap came from the strip app and left the lamp at a fraction of its output. The slider maps percentages along a squared curve, `50 + 24950 × (pct/100)²`, so the dim end stays controllable.
 - Reply checksums are unreliable, so parse by position and never reject a reply on checksum. Only power is decoded: the last byte of a sync reply is `0x32` on, `0x33` off.
 - Commands marked "Reference" in the handover are untested on this lamp. Don't add them to the UI until they have been verified on hardware. Use the raw frame sender in the log panel to test them.
 

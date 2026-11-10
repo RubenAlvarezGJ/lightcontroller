@@ -69,7 +69,7 @@ Command codes. "Verified" means tested on this lamp; "Reference" means listed in
 | `0x02` | Firmware info | unknown | Reference |
 | `0x03` | Set color | 4 bytes: R, G, B, `0x00` on this lamp | Accepted; RGB layout inferred (see Color encoding) |
 | `0x04` | Set part color | unknown | Reference |
-| `0x05` | Brightness | 2 bytes big-endian, `(i + 5) * 10` with i = 0 to 95, so 50 to 1000 | Verified |
+| `0x05` | Brightness | 2 bytes big-endian. The strip app uses `(i + 5) * 10` with i = 0 to 95 (50 to 1000), but this lamp goes up to 25000 (`61 A8`), matching the remote's peak | Verified |
 | `0x06` | Scene / effect mode | 2 bytes big-endian scene index | Reference |
 | `0x07` | Music mode | unknown | Reference |
 | `0x08` | Music sensitivity | unknown | Reference |
@@ -93,6 +93,7 @@ Known-good frames for unit tests (hex):
 | Red (RGB) | `55 03 FF 09 FF 00 00 00 A0` |
 | Blue (RGB) | `55 03 FF 09 00 00 FF 00 A0` |
 | Brightness \~50% (value 525) | `55 05 FF 07 02 0D 90` |
+| Brightness max (value 25000) | `55 05 FF 07 61 A8 96` |
 | Sync request | `55 00 FF 05 A6` |
 
 Writes use write-without-response when available, falling back to write-with-response.
