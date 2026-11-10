@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sunset Lamp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #EEE9F3;
+    --surface: #FFFFFF;
+    --ink: #2A2238;
+    --muted: #6E6480;
+    --line: #D8D0E2;
+    --glow: hsl(25, 100%, 55%);
+    --font: "Bricolage Grotesque", "Segoe UI", system-ui, -apple-system, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #1A1524;
+      --surface: #251E33;
+      --ink: #F1ECF7;
+      --muted: #A99FBA;
+      --line: #3A3149;
+    }
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  main {
+    max-width: 30rem;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 3rem;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .status { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0 0; }
+
+  button {
+    font: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--muted); }
+  button:focus-visible, .ring:focus-visible, input:focus-visible {
+    outline: 3px solid var(--glow);
+    outline-offset: 3px;
+  }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* The lamp: a hue ring around a glowing disc */
+  .lamp {
+    position: relative;
+    width: min(82vw, 21rem);
+    aspect-ratio: 1;
+    margin: 2.25rem auto 1.75rem;
+  }
+  .ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+      hsl(0,100%,50%), hsl(60,100%,50%), hsl(120,100%,50%), hsl(180,100%,50%),
+      hsl(240,100%,50%), hsl(300,100%,50%), hsl(360,100%,50%));
+    -webkit-mask: radial-gradient(circle, transparent 62%, #000 63%);
+            mask: radial-gradient(circle, transparent 62%, #000 63%);
+    touch-action: none;
+    cursor: grab;
+  }
+  .thumb {
+    position: absolute;
+    width: 1.6rem;
+    height: 1.6rem;
+    margin: -0.8rem 0 0 -0.8rem;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.35);
+    background: var(--glow);
+    pointer-events: none;
+  }
+  .disc {
+    position: absolute;
+    inset: 22%;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    background: radial-gradient(circle at 50% 45%, #fff 0%, var(--glow) 38%, var(--glow) 100%);
+    box-shadow: 0 0 2.5rem 0.5rem var(--glow), 0 0 6rem 1.5rem var(--glow);
+    transition: box-shadow .4s, opacity .4s, filter .4s;
+    display: grid;
+    place-items: center;
+    color: rgba(0,0,0,.6);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .disc.off {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--muted);
+  }
+
+  .controls { display: grid; gap: 1.25rem; }
+  label { display: grid; gap: 0.35rem; font-size: 0.95rem; }
+  .row { display: flex; justify-content: space-between; color: var(--muted); }
+  .row span:first-child { color: var(--ink); font-weight: 600; }
+  input[type=range] { width: 100%; accent-color: var(--glow); }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.5rem; }
+  .presets button {
+    width: 2.4rem; height: 2.4rem; padding: 0;
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--line);
+  }
+
+  .lamps { margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+  .lamps h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+  .lamps ul { list-style: none; margin: 0 0 0.75rem; padding: 0; }
+  .lamps li {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.4rem 0; color: var(--muted);
+  }
+  .lamps li button { padding: 0.25rem 0.75rem; font-size: 0.85rem; }
+  .note {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-top: 1.5rem;
+  }
+  details { margin-top: 1.5rem; color: var(--muted); font-size: 0.85rem; }
+  pre { white-space: pre-wrap; word-break: break-all; margin: 0.5rem 0 0; max-height: 12rem; overflow: auto; }
+  @media (prefers-reduced-motion: reduce) { .disc { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Sunset Lamp</h1>
+      <p class="status" id="status">No lamps connected</p>
+    </div>
+    <button id="connect">Connect lamp</button>
+  </header>
+
+  <div class="note" id="unsupported" hidden>
+    This browser can’t use Bluetooth. Open this page in Chrome or Edge on a laptop or Android phone. On iPhone, use the Bluefy browser.
+  </div>
+
+  <div class="lamp">
+    <div class="ring" id="ring" tabindex="0" role="slider" aria-label="Color" aria-valuemin="0" aria-valuemax="360" aria-valuenow="25"></div>
+    <div class="thumb" id="thumb"></div>
+    <button class="disc off" id="power" aria-pressed="false">Turn on</button>
+  </div>
+
+  <section class="controls">
+    <label>
+      <div class="row"><span>Brightness</span><span id="bVal">80%</span></div>
+      <input type="range" id="brightness" min="0" max="100" value="80">
+    </label>
+    <label>
+      <div class="row"><span>Color strength</span><span id="sVal">100%</span></div>
+      <input type="range" id="saturation" min="0" max="100" value="100">
+    </label>
+    <div>
+      <div class="row"><span>Presets</span></div>
+      <div class="presets" id="presets"></div>
+    </div>
+  </section>
+
+  <section class="lamps">
+    <h2>Connected lamps</h2>
+    <ul id="lampList"><li>None yet. Make sure the official app is closed, then select Connect lamp.</li></ul>
+  </section>
+
+  <details>
+    <summary>Settings</summary>
+    <label style="margin-top:.5rem">
+      <span>Color format</span>
+      <select id="format">
+        <option value="rgb">RGB (sunset lamp)</option>
+        <option value="hsv">Hue and saturation (MeRGBW strips)</option>
+      </select>
+    </label>
+  </details>
+
+  <details>
+    <summary>Bluetooth log</summary>
+    <pre id="log"></pre>
+  </details>
+</main>
+
+<script>
+(() => {
+  const SERVICE = 0xfff0, WRITE = 0xfff3, NOTIFY = 0xfff4;
+  const CMD = { SYNC: 0x00, POWER: 0x01, COLOR: 0x03, BRIGHTNESS: 0x05, TIME: 0x0c };
+
+  // ---- Protocol: 55 | cmd | FF | length | payload | checksum ----
+  function frame(cmd, payload = []) {
+    const len = 5 + payload.length;
+    const b = new Uint8Array(len);
+    b.set([0x55, cmd, 0xff, len, ...payload]);
+    let sum = 0;
+    for (let i = 0; i < len - 1; i++) sum += b[i];
+    b[len - 1] = (~(sum & 0xff)) & 0xff;
+    return b;
+  }
+  const be16 = v => [(v >> 8) & 0xff, v & 0xff];
+  const powerCmd = on => frame(CMD.POWER, [on ? 1 : 0]);
+  function hsvToRgb(h, s) {
+    s /= 100;
+    const f = n => {
+      const k = (n + h / 60) % 6;
+      return Math.round(255 * (1 - s * Math.max(0, Math.min(k, 4 - k, 1))));
+    };
+    return [f(5), f(3), f(1)];
+  }
+  // This lamp reads color as R, G, B (+ a spare byte). HSV is kept as a fallback for MeRGBW strips.
+  let colorFormat = 'rgb';
+  const colorCmd = (hue, sat) => colorFormat === 'rgb'
+    ? frame(CMD.COLOR, [...hsvToRgb(hue % 360, sat), 0])
+    : frame(CMD.COLOR, [...be16(Math.round(hue) % 361), ...be16(Math.round(sat * 10))]);
+  const brightnessCmd = pct => frame(CMD.BRIGHTNESS, be16((Math.round(pct / 100 * 95) + 5) * 10));
+  const timeCmd = d => frame(CMD.TIME, [...be16(d.getFullYear()), d.getMonth() + 1, d.getDate(),
+    d.getHours(), d.getMinutes(), d.getSeconds(), ((d.getDay() + 6) % 7) + 1]);
+  const hex = b => Array.from(b, x => x.toString(16).padStart(2, '0')).join(' ');
+
+  // ---- State ----
+  const state = { on: false, hue: 25, sat: 100, bri: 80 };
+  const lamps = new Map(); // id -> { device, char }
+
+  const $ = id => document.getElementById(id);
+  const logEl = $('log');
+  function log(msg) {
+    logEl.textContent = `${new Date().toLocaleTimeString()}  ${msg}\n` + logEl.textContent.slice(0, 4000);
+  }
+
+  // ---- Sending: only the latest command of each kind goes out, so dragging doesn't flood the lamp ----
+  const pending = new Map();
+  let flushing = false;
+  function send(kind, bytes) {
+    pending.set(kind, bytes);
+    if (!flushing) flush();
+  }
+  async function flush() {
+    flushing = true;
+    while (pending.size) {
+      const [kind, bytes] = pending.entries().next().value;
+      pending.delete(kind);
+      for (const { char, device } of lamps.values()) {
+        try {
+          if (char.writeValueWithoutResponse) await char.writeValueWithoutResponse(bytes);
+          else await char.writeValue(bytes);
+          log(`→ ${device.name || 'lamp'}: ${hex(bytes)}`);
+        } catch (e) { log(`Write to ${device.name || 'lamp'} failed: ${e.message}`); }
+      }
+      await new Promise(r => setTimeout(r, 40));
+    }
+    flushing = false;
+  }
+
+  // ---- Connecting ----
+  async function connectLamp() {
+    try {
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [SERVICE],
+      });
+      $('status').textContent = `Connecting to ${device.name || 'lamp'}…`;
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(SERVICE);
+      const char = await service.getCharacteristic(WRITE);
+      try {
+        const notify = await service.getCharacteristic(NOTIFY);
+        await notify.startNotifications();
+        notify.addEventListener('characteristicvaluechanged', e => {
+          const d = new Uint8Array(e.target.value.buffer);
+          log(`← ${device.name || 'lamp'}: ${hex(d)}`);
+          if (d[1] === CMD.SYNC && d.length > 4) {
+            const last = d[d.length - 1];
+            if (last === 0x32) setPower(true, false);
+            if (last === 0x33) setPower(false, false);
+          }
+        });
+      } catch (e) { log(`Notifications unavailable: ${e.message}`); }
+
+      device.addEventListener('gattserverdisconnected', () => {
+        lamps.delete(device.id);
+        log(`${device.name || 'lamp'} disconnected`);
+        renderLamps();
+      });
+      lamps.set(device.id, { device, char });
+      renderLamps();
+      send('sync', frame(CMD.SYNC));
+      send('time', timeCmd(new Date()));
+    } catch (e) {
+      if (e.name === 'NotFoundError') { renderLamps(); return; } // picker closed
+      $('status').textContent = e.name === 'NotFoundError' ? '' :
+        `Couldn’t connect: ${e.message}. Close the official app and try again.`;
+      log(e.message);
+    }
+  }
+
+  function renderLamps() {
+    const list = $('lampList');
+    list.innerHTML = '';
+    if (!lamps.size) {
+      list.innerHTML = '<li>None yet. Make sure the official app is closed, then select Connect lamp.</li>';
+      $('status').textContent = 'No lamps connected';
+      return;
+    }
+    for (const [id, { device }] of lamps) {
+      const li = document.createElement('li');
+      li.textContent = device.name || 'Unnamed lamp';
+      const b = document.createElement('button');
+      b.textContent = 'Disconnect';
+      b.onclick = () => device.gatt.disconnect();
+      li.appendChild(b);
+      list.appendChild(li);
+    }
+    $('status').textContent = `${lamps.size} lamp${lamps.size > 1 ? 's' : ''} connected`;
+  }
+
+  // ---- UI ----
+  const ring = $('ring'), thumb = $('thumb'), disc = $('power');
+
+  function paint() {
+    const light = 50 + (100 - state.sat) * 0.4;
+    document.documentElement.style.setProperty('--glow', `hsl(${state.hue}, ${Math.max(state.sat, 8)}%, ${light}%)`);
+    const lampBox = ring.getBoundingClientRect();
+    const r = lampBox.width / 2, rad = (state.hue - 90) * Math.PI / 180, track = r * 0.815;
+    thumb.style.left = `${r + Math.cos(rad) * track}px`;
+    thumb.style.top = `${r + Math.sin(rad) * track}px`;
+    ring.setAttribute('aria-valuenow', Math.round(state.hue));
+    disc.classList.toggle('off', !state.on);
+    disc.style.opacity = state.on ? 0.55 + state.bri / 220 : '';
+    disc.textContent = state.on ? 'Turn off' : 'Turn on';
+    disc.setAttribute('aria-pressed', state.on);
+  }
+
+  function setPower(on, transmit = true) {
+    state.on = on;
+    if (transmit) send('power', powerCmd(on));
+    paint();
+  }
+  function setColor(hue, sat = state.sat) {
+    state.hue = (hue + 360) % 360;
+    state.sat = sat;
+    if (!state.on) setPower(true);
+    send('color', colorCmd(state.hue, state.sat));
+    paint();
+  }
+
+  function hueFromPointer(e) {
+    const b = ring.getBoundingClientRect();
+    const x = e.clientX - (b.left + b.width / 2), y = e.clientY - (b.top + b.height / 2);
+    return (Math.atan2(y, x) * 180 / Math.PI + 90 + 360) % 360;
+  }
+  ring.addEventListener('pointerdown', e => {
+    ring.setPointerCapture(e.pointerId);
+    setColor(hueFromPointer(e));
+  });
+  ring.addEventListener('pointermove', e => {
+    if (ring.hasPointerCapture(e.pointerId)) setColor(hueFromPointer(e));
+  });
+  ring.addEventListener('keydown', e => {
+    const step = e.shiftKey ? 30 : 5;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { setColor(state.hue + step); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { setColor(state.hue - step); e.preventDefault(); }
+  });
+
+  disc.addEventListener('click', () => setPower(!state.on));
+
+  $('brightness').addEventListener('input', e => {
+    state.bri = +e.target.value;
+    $('bVal').textContent = `${state.bri}%`;
+    if (!state.on) setPower(true);
+    send('brightness', brightnessCmd(state.bri));
+    paint();
+  });
+  $('saturation').addEventListener('input', e => {
+    $('sVal').textContent = `${e.target.value}%`;
+    setColor(state.hue, +e.target.value);
+  });
+
+  const presets = [
+    ['Sunset', 22, 100], ['Golden hour', 38, 100], ['Rose', 340, 85], ['Magenta', 300, 100],
+    ['Violet', 270, 100], ['Ocean', 205, 100], ['Teal', 170, 100], ['Warm white', 30, 25],
+  ];
+  for (const [name, h, s] of presets) {
+    const b = document.createElement('button');
+    b.title = name;
+    b.setAttribute('aria-label', name);
+    b.style.background = `hsl(${h}, ${s}%, ${50 + (100 - s) * 0.4}%)`;
+    b.onclick = () => {
+      $('saturation').value = s;
+      $('sVal').textContent = `${s}%`;
+      setColor(h, s);
+    };
+    $('presets').appendChild(b);
+  }
+
+  $('format').addEventListener('change', e => {
+    colorFormat = e.target.value;
+    send('color', colorCmd(state.hue, state.sat));
+  });
+
+  $('connect').addEventListener('click', connectLamp);
+  window.addEventListener('resize', paint);
+
+  const framed = (() => { try { return window.self !== window.top; } catch { return true; } })();
+  const policyBlocked = document.featurePolicy && !document.featurePolicy.allowsFeature('bluetooth');
+  if (framed || policyBlocked) {
+    $('unsupported').textContent = 'Bluetooth is blocked in this preview. Download this file and open it directly in Chrome or Edge.';
+    $('unsupported').hidden = false;
+    $('connect').disabled = true;
+  } else if (!navigator.bluetooth) {
+    $('unsupported').hidden = false;
+    $('connect').disabled = true;
+  }
+  paint();
+})();
+</script>
+</body>
+</html>
