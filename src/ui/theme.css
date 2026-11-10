@@ -1,0 +1,339 @@
+:root {
+  color-scheme: light;
+  --bg: #eee9f3;
+  --surface: #ffffff;
+  --ink: #2a2238;
+  --muted: #6e6480;
+  --line: #d8d0e2;
+  --error: #b3261e;
+  --glow: hsl(25, 100%, 55%);
+  --font: 'Bricolage Grotesque Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #1a1524;
+    --surface: #251e33;
+    --ink: #f1ecf7;
+    --muted: #a99fba;
+    --line: #3a3149;
+    --error: #ffb4ab;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0)
+    env(safe-area-inset-left, 0);
+}
+
+main {
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.status,
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+}
+button:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+button.small {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+button:focus-visible,
+.ring:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--glow);
+  outline-offset: 3px;
+}
+
+input[type='text'],
+select {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  width: 100%;
+}
+
+/* The lamp: a hue ring around a glowing power button */
+.lamp {
+  position: relative;
+  width: min(82vw, 21rem);
+  aspect-ratio: 1;
+  margin: 2.25rem auto 1.75rem;
+}
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    hsl(0, 100%, 50%),
+    hsl(60, 100%, 50%),
+    hsl(120, 100%, 50%),
+    hsl(180, 100%, 50%),
+    hsl(240, 100%, 50%),
+    hsl(300, 100%, 50%),
+    hsl(360, 100%, 50%)
+  );
+  mask: radial-gradient(circle, transparent 62%, #000 63%);
+  touch-action: none;
+  cursor: grab;
+}
+.thumb-arm {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.thumb {
+  position: absolute;
+  left: 50%;
+  top: 9.25%; /* ring track at 81.5% of the radius */
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: -0.8rem 0 0 -0.8rem;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  background: var(--glow);
+}
+.disc {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: radial-gradient(circle at 50% 45%, #fff 0%, var(--glow) 38%, var(--glow) 100%);
+  box-shadow:
+    0 0 2.5rem 0.5rem var(--glow),
+    0 0 6rem 1.5rem var(--glow);
+  transition:
+    box-shadow 0.4s,
+    opacity 0.4s;
+  display: grid;
+  place-items: center;
+  color: rgba(0, 0, 0, 0.6);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.disc.off {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--muted);
+}
+
+.controls {
+  display: grid;
+  gap: 1.25rem;
+}
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+label.inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+}
+.row span:first-child {
+  color: var(--ink);
+  font-weight: 600;
+}
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--glow);
+}
+input[type='checkbox'] {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--glow);
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.presets button {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.lamps {
+  margin-top: 2rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+.lamps ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lamp-row {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.lamp-row:last-child {
+  border-bottom: none;
+}
+.lamp-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.lamp-title {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+.lamp-title strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lamp-title .muted {
+  margin: 0;
+  font-size: 0.85rem;
+}
+.status-reconnecting .lamp-title .muted {
+  color: var(--ink);
+}
+.lamp-settings {
+  margin: 0.4rem 0 0 1.9rem;
+}
+.lamp-settings-body {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  justify-items: start;
+}
+.lamp-settings-body label {
+  width: 100%;
+}
+
+.note {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin: 1.5rem 0 0;
+}
+.error {
+  color: var(--error);
+}
+
+details {
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+summary {
+  cursor: pointer;
+}
+.log-tools {
+  margin-top: 0.5rem;
+}
+pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0.5rem 0 0;
+  max-height: 14rem;
+  overflow: auto;
+  font-size: 0.8rem;
+}
+.raw {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  justify-items: start;
+}
+.raw label:not(.inline) {
+  width: 100%;
+}
+.raw input[type='text'] {
+  font-family: ui-monospace, monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disc {
+    transition: none;
+  }
+}
