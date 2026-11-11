@@ -1,6 +1,7 @@
 import { syncCmd, timeSyncCmd } from '../protocol/commands';
 import { toHex } from '../protocol/frame';
 import { parseReply } from '../protocol/parse';
+import { describeError as errorMessage } from '../transport/errors';
 import type { LampLink, Transport } from '../transport/Transport';
 import type { EventLog } from './log';
 import type { LampSettings, SettingsStore } from './settings';
@@ -331,7 +332,3 @@ export class LampManager {
 }
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-function errorMessage(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
-}

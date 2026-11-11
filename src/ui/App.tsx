@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { CONNECT_HINT } from '../devices/LampManager';
+import { describeError } from '../transport/errors';
 import { SUPPORT_MESSAGES } from '../transport/support';
 import { ColorControls } from './Controls';
 import { useStore } from './hooks';
@@ -32,9 +33,7 @@ export function App({ services }: { services: AppServices }) {
     try {
       await manager.requestLamp();
     } catch (e) {
-      setConnectError(
-        `Couldn’t connect: ${e instanceof Error ? e.message : String(e)}. ${CONNECT_HINT}`,
-      );
+      setConnectError(`Couldn’t connect. ${describeError(e)}. ${CONNECT_HINT}`);
     } finally {
       setPicking(false);
     }

@@ -1,5 +1,18 @@
 import { NOTIFY_CHAR_UUID, SERVICE_UUID, WRITE_CHAR_UUID } from '../protocol/frame';
+import { describeError, step, StepError } from './errors';
 import type { LampLink, Transport } from './Transport';
+
+/**
+ * Full 128-bit form of a 16-bit Bluetooth UUID. Chrome accepts plain numbers,
+ * but Bluefy on iOS needs the canonical lowercase string.
+ */
+export function uuid16(short: number): string {
+  return `0000${short.toString(16).padStart(4, '0')}-0000-1000-8000-00805f9b34fb`;
+}
+
+const SERVICE = uuid16(SERVICE_UUID);
+const WRITE_CHAR = uuid16(WRITE_CHAR_UUID);
+const NOTIFY_CHAR = uuid16(NOTIFY_CHAR_UUID);
 
 const ADVERTISEMENT_WAIT_MS = 10_000;
 
@@ -23,25 +36,30 @@ class WebBluetoothLamp implements LampLink {
   async connect(): Promise<{ notifyError?: string }> {
     const gatt = this.device.gatt;
     if (!gatt) throw new Error('This device has no GATT server.');
-    let server: BluetoothRemoteGATTServer;
-    try {
-      server = await gatt.connect();
-    } catch (e) {
-      // A remembered lamp may need to be seen advertising before Chrome can connect.
-      if (!(await this.waitForAdvertisement())) throw e;
-      server = await gatt.connect();
-    }
-    const service = await server.getPrimaryService(SERVICE_UUID);
-    this.writeChar = await service.getCharacteristic(WRITE_CHAR_UUID);
+    const server = await step('Opening the Bluetooth connection', async () => {
+      try {
+        return await gatt.connect();
+      } catch (e) {
+        // A remembered lamp may need to be seen advertising before Chrome can connect.
+        if (!(await this.waitForAdvertisement())) throw e;
+        return await gatt.connect();
+      }
+    });
+    const service = await step('Finding the lamp service (FFF0)', () =>
+      server.getPrimaryService(SERVICE),
+    );
+    this.writeChar = await step('Finding the command channel (FFF3)', () =>
+      service.getCharacteristic(WRITE_CHAR),
+    );
 
     try {
       this.notifyChar?.removeEventListener('characteristicvaluechanged', this.handleNotify);
-      this.notifyChar = await service.getCharacteristic(NOTIFY_CHAR_UUID);
+      this.notifyChar = await service.getCharacteristic(NOTIFY_CHAR);
       this.notifyChar.addEventListener('characteristicvaluechanged', this.handleNotify);
       await this.notifyChar.startNotifications();
       return {};
     } catch (e) {
-      return { notifyError: errorMessage(e) };
+      return { notifyError: describeError(e) };
     }
   }
 
@@ -53,7 +71,7 @@ class WebBluetoothLamp implements LampLink {
     const char = this.writeChar;
     if (!char) throw new Error('Not connected');
     const data = bytes as Uint8Array<ArrayBuffer>;
-    if (char.properties.writeWithoutResponse && char.writeValueWithoutResponse) {
+    if (char.properties?.writeWithoutResponse && char.writeValueWithoutResponse) {
       await char.writeValueWithoutResponse(data);
     } else if (char.writeValueWithResponse) {
       await char.writeValueWithResponse(data);
@@ -108,17 +126,18 @@ export class WebBluetoothTransport implements Transport {
   private readonly lamps = new Map<string, WebBluetoothLamp>();
 
   async requestLamp(): Promise<LampLink | null> {
+    let device: BluetoothDevice;
     try {
       // The lamp's advertisement contents are unconfirmed, so this can't filter yet.
-      const device = await navigator.bluetooth.requestDevice({
+      device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
-        optionalServices: [SERVICE_UUID],
+        optionalServices: [SERVICE],
       });
-      return this.wrap(device);
     } catch (e) {
       if (e instanceof DOMException && e.name === 'NotFoundError') return null; // picker closed
-      throw e;
+      throw new StepError('Choosing a lamp', e);
     }
+    return this.wrap(device);
   }
 
   async getRememberedLamps(): Promise<LampLink[]> {
@@ -139,8 +158,4 @@ export class WebBluetoothTransport implements Transport {
     }
     return lamp;
   }
-}
-
-export function errorMessage(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
 }
